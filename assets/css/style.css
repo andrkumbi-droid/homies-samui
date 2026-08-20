@@ -297,6 +297,20 @@ section.tight { padding: 56px 0; }
   border-bottom: 1px dashed var(--line);
 }
 .menu-item h3 { font-size: 1.02rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.menu-item.with-thumb { grid-template-columns: 68px 1fr auto; }
+.menu-item.with-thumb .thumb {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: center;
+  width: 68px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+}
+.menu-item.with-thumb h3 { grid-column: 2; }
+.menu-item.with-thumb .desc { grid-column: 2; }
+.menu-item.with-thumb .price { grid-column: 3; }
 .menu-item .desc { grid-column: 1; color: var(--ink-dim); font-size: 0.93rem; }
 .menu-item .price {
   grid-row: 1;
@@ -367,6 +381,37 @@ section.tight { padding: 56px 0; }
   line-height: 1;
   cursor: pointer;
 }
+
+/* ---------- reviews ---------- */
+
+.rating-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  color: var(--ink);
+  font-weight: 600;
+}
+.stars { display: inline-flex; gap: 2px; }
+.stars svg { width: 20px; height: 20px; fill: #f5b942; }
+.quote-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 26px;
+  margin-top: 42px;
+}
+.quote-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 28px;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.quote-card p { color: var(--ink); font-size: 1rem; line-height: 1.6; }
+.quote-card .who { color: var(--ink-dim); font-size: 0.85rem; letter-spacing: 0.04em; margin-top: auto; }
+@media (max-width: 860px) { .quote-grid { grid-template-columns: 1fr; } }
 
 /* ---------- split (about teaser) ---------- */
 
