@@ -26,6 +26,22 @@
     reveals.forEach(function (el) { el.classList.add('in'); });
   }
 
+  // lazy autoplay for muted loop videos (pause off-screen, respect reduced motion)
+  var vids = document.querySelectorAll('video.lazy-vid');
+  if (vids.length && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if ('IntersectionObserver' in window) {
+      var vio = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.play().catch(function () {}); }
+          else { e.target.pause(); }
+        });
+      }, { rootMargin: '120px' });
+      vids.forEach(function (v) { vio.observe(v); });
+    } else {
+      vids.forEach(function (v) { v.play().catch(function () {}); });
+    }
+  }
+
   // gallery lightbox
   var gallery = document.getElementById('gallery');
   var lightbox = document.getElementById('lightbox');
