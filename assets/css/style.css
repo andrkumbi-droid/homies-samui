@@ -398,6 +398,31 @@ section.tight { padding: 56px 0; }
 .info-card li span:last-child { color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
 @media (max-width: 860px) { .info-grid { grid-template-columns: 1fr; } }
 
+.qr-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 260px));
+  gap: 26px;
+  justify-content: center;
+  margin-top: 38px;
+}
+.qr-card {
+  background: #ffffff;
+  border-radius: var(--radius);
+  padding: 18px 18px 14px;
+  text-align: center;
+}
+.qr-card img { width: 100%; height: auto; border-radius: 6px; }
+.qr-card p {
+  color: #14181a;
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-top: 10px;
+}
+.order-row { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; margin-top: 8px; }
+.btn svg.icon { width: 20px; height: 20px; stroke: currentColor; flex-shrink: 0; }
+
 .map-frame {
   margin-top: 34px;
   border-radius: var(--radius);
