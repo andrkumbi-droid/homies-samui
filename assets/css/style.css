@@ -16,7 +16,7 @@
   --shadow:    0 10px 30px rgba(0, 0, 0, 0.45);
   --radius:    14px;
   --font-sans: 'Montserrat', 'Noto Sans Thai', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-script: 'Mrs Saint Delafield', cursive;
+  --font-script: 'Dancing Script', cursive;
   --nav-h: 72px;
   --wrap: 1160px;
 }
@@ -69,7 +69,8 @@ h3 { font-size: 1.15rem; }
 .kicker {
   display: block;
   font-family: var(--font-script);
-  font-size: clamp(1.9rem, 4vw, 2.8rem);
+  font-weight: 600;
+  font-size: clamp(1.7rem, 3.5vw, 2.4rem);
   color: var(--teal-hi);
   margin-bottom: 0.15em;
 }
@@ -215,7 +216,7 @@ h3 { font-size: 1.15rem; }
     linear-gradient(180deg, rgba(16,19,20,0.55) 0%, rgba(16,19,20,0.15) 40%, rgba(16,19,20,0.92) 100%);
 }
 .hero-inner { width: 100%; padding-top: 120px; padding-bottom: 72px; }
-.hero .kicker { font-size: clamp(2.4rem, 6vw, 4rem); }
+.hero .kicker { font-size: clamp(2rem, 5vw, 3.2rem); }
 .hero p { margin: 18px 0 30px; }
 .hero-cta { display: flex; flex-wrap: wrap; gap: 14px; }
 
