@@ -126,9 +126,18 @@ h3 { font-size: 1.15rem; }
   gap: 16px;
 }
 
-.brand { display: flex; flex-direction: column; line-height: 1; }
-.brand-logo { height: 44px; width: auto; display: block; }
-.foot-logo { height: 62px; width: auto; margin-bottom: 12px; }
+.brand { display: flex; flex-direction: column; align-items: flex-start; line-height: 1; }
+.brand-logo { height: 40px; width: auto; display: block; }
+.foot-logo { height: 58px; width: auto; margin-bottom: 5px; }
+.foot-sub {
+  display: block;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin: 0 0 14px;
+}
 .brand .brand-script {
   font-family: var(--font-script);
   font-size: 2.1rem;
@@ -136,7 +145,7 @@ h3 { font-size: 1.15rem; }
   transform: rotate(-3deg);
 }
 .brand .brand-sub {
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.42em;
   text-transform: uppercase;
