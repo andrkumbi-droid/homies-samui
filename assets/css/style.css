@@ -170,6 +170,17 @@ h3 { font-size: 1.15rem; }
 .nav-links a[aria-current="page"] { color: var(--teal-hi); }
 .nav-links .btn { min-height: 42px; padding: 9px 22px; margin-left: 8px; }
 
+.lang-switch { display: flex; align-items: center; }
+.lang-switch a {
+  padding: 12px 7px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink-dim);
+}
+.lang-switch a:hover { color: var(--ink); }
+.lang-switch a[aria-current] { color: var(--teal-hi); }
+
 .nav-toggle {
   display: none;
   width: 48px; height: 48px;
