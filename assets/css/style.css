@@ -126,6 +126,8 @@ h3 { font-size: 1.15rem; }
 }
 
 .brand { display: flex; flex-direction: column; line-height: 1; }
+.brand-logo { height: 44px; width: auto; display: block; }
+.foot-logo { height: 62px; width: auto; margin-bottom: 12px; }
 .brand .brand-script {
   font-family: var(--font-script);
   font-size: 2.1rem;
@@ -212,7 +214,7 @@ h3 { font-size: 1.15rem; }
   background:
     linear-gradient(180deg, rgba(16,19,20,0.55) 0%, rgba(16,19,20,0.15) 40%, rgba(16,19,20,0.92) 100%);
 }
-.hero-inner { width: 100%; padding: 120px 0 72px; }
+.hero-inner { width: 100%; padding-top: 120px; padding-bottom: 72px; }
 .hero .kicker { font-size: clamp(2.4rem, 6vw, 4rem); }
 .hero p { margin: 18px 0 30px; }
 .hero-cta { display: flex; flex-wrap: wrap; gap: 14px; }
