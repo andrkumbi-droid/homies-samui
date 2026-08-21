@@ -4,7 +4,9 @@ name: Mediathek übernehmen
 # Läuft alle 5 Minuten von selbst — niemand muss dafür einen Rechner anhaben.
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    # krumme Minuten: auf den vollen 5er-Marken drängeln sich weltweit alle
+    # Zeitpläne, GitHub schiebt sie dann teils um viertelstunden nach hinten
+    - cron: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *"
   workflow_dispatch:        # Knopf "Run workflow" auf GitHub, für sofort
 
 concurrency:
