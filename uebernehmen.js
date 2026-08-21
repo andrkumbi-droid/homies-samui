@@ -3,7 +3,7 @@
 //   node uebernehmen.js            einmal übernehmen (lokal ansehen)
 //   node uebernehmen.js --watch    im Hintergrund lauschen und sofort übernehmen
 //   node uebernehmen.js --push     übernehmen und live stellen (committen + pushen)
-//   node uebernehmen.js --entwurf  auch unfreigegebene Änderungen einbauen
+//   node uebernehmen.js --freigegeben  nur ausdrücklich Freigegebenes einbauen
 //
 // Zugangsdaten liegen in zugang.json (nicht im Repo).
 
@@ -23,7 +23,9 @@ const FFMPEG = process.env.FFMPEG_PATH || (fs.existsSync(WIN_FFMPEG) ? WIN_FFMPE
 const args = process.argv.slice(2);
 const WATCH = args.includes("--watch");
 const PUSH = args.includes("--push");
-const DOC = args.includes("--entwurf") ? "draft" : "published";
+// Es gibt keinen Freigabe-Schritt mehr: der Entwurf IST der gültige Stand.
+// (--freigegeben liest wieder layout/published, falls wir je zurückschalten)
+const DOC = args.includes("--freigegeben") ? "published" : "draft";
 
 // Zugangsdaten aus der Datei — bei GitHub aus den hinterlegten Geheimnissen
 const zugang = fs.existsSync(path.join(SITE, "zugang.json"))
@@ -119,7 +121,7 @@ async function ensureFile(id, item) {
   const posterRel = isVideo ? "assets/video/" + stem + "-poster.jpg" : null;
 
   if (cache[id] === rel && fs.existsSync(out) && (!poster || fs.existsSync(poster))) {
-    return { rel, posterRel, isVideo, w: item.w, h: item.h };
+    return { rel, posterRel, isVideo, w: item.w, h: item.h, alt: item.alt || "" };
   }
 
   const tmp = path.join(SITE, ".tmp-download");
@@ -148,12 +150,13 @@ async function ensureFile(id, item) {
   fs.unlinkSync(tmp);
   cache[id] = rel;
   log("  aufbereitet:", rel, "(" + Math.round(fs.statSync(out).size / 1024) + " KB)");
-  return { rel, posterRel, isVideo, w: item.w, h: item.h };
+  return { rel, posterRel, isVideo, w: item.w, h: item.h, alt: item.alt || "" };
 }
 
 /* ── HTML umschreiben ────────────────────────────────────── */
 
 const up = (rel, dir) => (dir ? "../" : "") + rel;
+const nameOf = (rel) => String(rel).split("/").pop();
 
 // Attribute eines Elements einlesen, damit beim Austausch nichts verlorengeht
 // (alt-Texte, fetchpriority, aria-label — alles bleibt, wie es war).
@@ -183,8 +186,17 @@ function replaceSingle(html, key, index, file, dir) {
     const open = m.slice(0, m.indexOf(">") + 1);
     const tagName = open.slice(1, open.indexOf(" "));
     const a = attrsOf(open);
+    const alteDatei = (a.get("src") || "").split("/").pop();
     a.delete("src"); a.delete("poster"); a.delete("width"); a.delete("height");
     a.delete("muted"); a.delete("loop"); a.delete("playsinline"); a.delete("preload"); a.delete("autoplay");
+
+    // Beschreibung gehört zum Motiv, nicht zum Platz: liegt dort eine ANDERE
+    // Datei als vorher, wäre der alte Text schlicht falsch (ein Katsu-Clip
+    // hieße sonst weiter „Patties auf der Grillplatte"). Dann lieber die
+    // Beschreibung aus der Mediathek — und sonst gar keine.
+    const andereDatei = alteDatei !== nameOf(file.rel);
+    if (andereDatei) { a.delete("alt"); a.delete("aria-label"); }
+    const beschreibung = file.alt || (andereDatei ? "" : (a.get("alt") || a.get("aria-label") || ""));
 
     const neu = new Map();
     neu.set("data-slot", key); neu.set("data-i", String(index));
@@ -198,9 +210,9 @@ function replaceSingle(html, key, index, file, dir) {
       neu.set("poster", up(file.posterRel, dir));
       neu.set("src", up(file.rel, dir));
       if (file.w) { neu.set("width", String(file.w)); neu.set("height", String(file.h)); }
-      // ein Bild wird zum Clip: alt-Text wandert in aria-label
-      if (tagName === "img" && a.get("alt") && !a.get("aria-label")) { neu.set("aria-label", a.get("alt")); a.delete("alt"); }
-      for (const [k, v] of a) if (k !== "alt" && k !== "loading" && k !== "fetchpriority") neu.set(k, v);
+      if (beschreibung) neu.set("aria-label", beschreibung);
+      a.delete("alt"); a.delete("aria-label");
+      for (const [k, v] of a) if (k !== "loading" && k !== "fetchpriority") neu.set(k, v);
       // <video> ist kein selbstschließendes Element — ohne Schließtag würde
       // alles, was danach kommt, als unsichtbarer Ersatzinhalt verschluckt
       return buildTag("video", neu) + "</video>";
@@ -212,10 +224,9 @@ function replaceSingle(html, key, index, file, dir) {
     a.delete("class");
     neu.set("src", up(file.rel, dir));
     if (file.w) { neu.set("width", String(file.w)); neu.set("height", String(file.h)); }
-    // ein Clip wird zum Bild: aria-label wandert zurück in alt
-    if (tagName === "video" && a.get("aria-label") && !a.get("alt")) { neu.set("alt", a.get("aria-label")); a.delete("aria-label"); }
-    for (const [k, v] of a) if (k !== "aria-label") neu.set(k, v);
-    if (!neu.has("alt")) neu.set("alt", "");
+    neu.set("alt", beschreibung);
+    a.delete("alt"); a.delete("aria-label");
+    for (const [k, v] of a) neu.set(k, v);
     return buildTag("img", neu);
   });
 }
@@ -240,7 +251,6 @@ function replaceList(html, key, files, dir) {
   for (const k of alteKacheln) if (k[2]) alt[k[1]] = k[2];
   const label = {};
   for (const k of html.slice(start, i).matchAll(/src="[^"]*\/([^"\/]+)"[^>]*?aria-label="([^"]*)"/g)) label[k[1]] = k[2];
-  const nameOf = (rel) => rel.split("/").pop();
 
   const inner = files.map(f => {
     const size = f.w ? ` width="${f.w}" height="${f.h}"` : "";

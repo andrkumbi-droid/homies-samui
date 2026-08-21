@@ -611,11 +611,18 @@ section.tight { padding: 56px 0; }
 .hero-media video,
 .food-card .thumb video,
 .split .photo video,
-.info-card video {
+.info-card video,
+.gal-grid a video,
+.photo video {
   width: 100%; height: 100%;
   object-fit: cover;
   object-position: center;
   display: block;
 }
 .food-card:hover .thumb video { transform: scale(1.045); transition: transform 400ms ease-out; }
+.gal-grid a:hover video { transform: scale(1.05); transition: transform 350ms ease-out; }
 video.thumb { object-fit: cover; display: block; }
+
+/* Sicherheitsnetz: ein aus der Mediathek eingesetzter Clip sprengt nie seinen
+   Rahmen, auch wenn ich für eine Stelle mal keine eigene Regel geschrieben habe */
+video[data-slot] { max-width: 100%; }
