@@ -604,3 +604,18 @@ section.tight { padding: 56px 0; }
   font-weight: 700;
 }
 .skip-link:focus { left: 12px; top: 12px; }
+
+/* ── Clips dürfen überall stehen, wo sonst ein Foto steht ──
+   Die Mediathek erlaubt auf jedem Platz Foto oder Video; damit ein
+   eingesetztes Video dieselbe Größe und denselben Zuschnitt bekommt. */
+.hero-media video,
+.food-card .thumb video,
+.split .photo video,
+.info-card video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+.food-card:hover .thumb video { transform: scale(1.045); transition: transform 400ms ease-out; }
+video.thumb { object-fit: cover; display: block; }

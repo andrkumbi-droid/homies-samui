@@ -102,7 +102,7 @@
   <!-- HERO -->
   <section class="hero" aria-label="ยินดีต้อนรับ">
     <div class="hero-media">
-      <img src="../assets/img/hero-smashburger-koh-samui.jpg" alt="ดับเบิลสแมชเบอร์เกอร์ชีสเยิ้ม ๆ ชูขึ้นด้วยมือใส่ถุงมือที่ Homies Burger and Fries เกาะสมุย" width="1565" height="1046" fetchpriority="high">
+      <img data-slot="home.hero" data-i="0" src="../assets/img/hero-smashburger-koh-samui.jpg" width="1565" height="1046" alt="ดับเบิลสแมชเบอร์เกอร์ชีสเยิ้ม ๆ ชูขึ้นด้วยมือใส่ถุงมือที่ Homies Burger and Fries เกาะสมุย" fetchpriority="high">
     </div>
     <div class="wrap hero-inner">
       <span class="kicker">smashed fresh, stacked right</span>
@@ -145,7 +145,7 @@
       </div>
       <div class="card-grid">
         <article class="food-card reveal">
-          <div class="thumb"><img src="../assets/img/classic-smashburger.jpg" alt="สแมชเบอร์เกอร์คลาสสิกกับเชดดาร์ชีส แตงกวาดอง และซอสสูตรพิเศษ" loading="lazy" width="1400" height="932"></div>
+          <div class="thumb"><video data-slot="home.favorites" data-i="0" class="lazy-vid" muted loop playsinline preload="none" poster="../assets/video/burger-rotate-poster.jpg" src="../assets/video/burger-rotate.mp4" width="540" height="720" aria-label="สแมชเบอร์เกอร์คลาสสิกกับเชดดาร์ชีส แตงกวาดอง และซอสสูตรพิเศษ"></div>
           <div class="body">
             <h3>Classic Burger</h3>
             <p>เนื้อสแมชเบอร์เกอร์ เชดดาร์ชีส ซอสสูตรพิเศษ แตงกวาดองโฮมเมด มะเขือเทศ หอมใหญ่ และผักกาดแก้ว</p>
@@ -153,7 +153,7 @@
           </div>
         </article>
         <article class="food-card reveal">
-          <div class="thumb"><img src="../assets/img/crispy-chicken-burger.jpg" alt="เบอร์เกอร์ไก่ทอดกรอบกับผักกาดแก้วและมายองเนส" loading="lazy" width="1400" height="932"></div>
+          <div class="thumb"><video data-slot="home.favorites" data-i="1" class="lazy-vid" muted loop playsinline preload="none" poster="../assets/video/chicken-beauty-poster.jpg" src="../assets/video/chicken-beauty.mp4" width="540" height="720" aria-label="เบอร์เกอร์ไก่ทอดกรอบกับผักกาดแก้วและมายองเนส"></div>
           <div class="body">
             <h3>Chicken Burger</h3>
             <p>ไก่ทอดฉ่ำ ๆ ซอสสูตรพิเศษ แตงกวาดองโฮมเมด และผักกาดแก้ว บนขนมปังมันฝรั่งโฮมเมด</p>
@@ -161,7 +161,7 @@
           </div>
         </article>
         <article class="food-card reveal">
-          <div class="thumb"><img src="../assets/img/loaded-fries.jpg" alt="โหลดเด็ดฟรายส์ราดซอสครีมมี่บนกระดาษแบรนด์ Homies" loading="lazy" width="1050" height="1400"></div>
+          <div class="thumb"><img data-slot="home.favorites" data-i="2" src="../assets/img/loaded-fries.jpg" width="1050" height="1400" alt="โหลดเด็ดฟรายส์ราดซอสครีมมี่บนกระดาษแบรนด์ Homies"></div>
           <div class="body">
             <h3>Fries &amp; Combos</h3>
             <p>ฟรายส์คลาสสิกหรือชิลีชีส — และอัปเกรดเบอร์เกอร์ทุกตัวเป็นคอมโบพร้อมฟรายส์และเครื่องดื่ม เริ่มแค่ +฿100</p>
@@ -179,7 +179,7 @@
   <section>
     <div class="wrap split">
       <div class="photo reveal">
-        <video class="lazy-vid" muted loop playsinline preload="none" poster="../assets/video/cheese-melt-poster.jpg" src="../assets/video/cheese-melt.mp4" width="540" height="720" aria-label="ชีสเงาวับกำลังละลายบนเนื้อสแมชขอบกรอบบนกระทะร้อน"></video>
+        <video data-slot="home.story" data-i="0" class="lazy-vid" muted loop playsinline preload="none" poster="../assets/video/cheese-melt-poster.jpg" src="../assets/video/cheese-melt.mp4" width="540" height="720" aria-label="ชีสเงาวับกำลังละลายบนเนื้อสแมชขอบกรอบบนกระทะร้อน"></video>
       </div>
       <div class="content reveal">
         <span class="kicker">our story</span>
@@ -199,9 +199,9 @@
         <h2>แกลเลอรี</h2>
       </div>
       <div class="gal-grid">
-        <a href="gallery.html" aria-label="เปิดแกลเลอรี"><img src="../assets/img/onion-smashburger-griddle.jpg" alt="สแมชเบอร์เกอร์หอมใหญ่กำลังย่างบนกระทะ" loading="lazy" width="1170" height="1246"></a>
-        <a href="gallery.html" aria-label="เปิดแกลเลอรี"><img src="../assets/img/fries-branded-paper.jpg" alt="เฟรนช์ฟรายส์สีทองในกระดาษแบรนด์ Homies" loading="lazy" width="1050" height="1400"></a>
-        <a href="gallery.html" aria-label="เปิดแกลเลอรี"><img src="../assets/img/smashing-on-the-griddle.jpg" alt="เนื้อสแมชเบอร์เกอร์กับหอมใหญ่ควันฉุยบนกระทะร้อน" loading="lazy" width="1200" height="1600"></a>
+        <a href="gallery.html" aria-label="เปิดแกลเลอรี"><img data-slot="home.teaser" data-i="0" src="../assets/img/onion-smashburger-griddle.jpg" width="1170" height="1246" alt="สแมชเบอร์เกอร์หอมใหญ่กำลังย่างบนกระทะ" loading="lazy"></a>
+        <a href="gallery.html" aria-label="เปิดแกลเลอรี"><img data-slot="home.teaser" data-i="1" src="../assets/img/fries-branded-paper.jpg" width="1050" height="1400" alt="เฟรนช์ฟรายส์สีทองในกระดาษแบรนด์ Homies" loading="lazy"></a>
+        <a href="gallery.html" aria-label="เปิดแกลเลอรี"><img data-slot="home.teaser" data-i="2" src="../assets/img/smashing-on-the-griddle.jpg" width="1200" height="1600" alt="เนื้อสแมชเบอร์เกอร์กับหอมใหญ่ควันฉุยบนกระทะร้อน" loading="lazy"></a>
       </div>
       <div class="center mt-lg">
         <a class="btn ghost" href="gallery.html">ดูรูปทั้งหมด</a>
