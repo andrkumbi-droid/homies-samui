@@ -43,9 +43,9 @@
   }
 
   // gallery lightbox
-  var gallery = document.getElementById('gallery');
+  var galleries = document.querySelectorAll(".gal-grid");
   var lightbox = document.getElementById('lightbox');
-  if (gallery && lightbox) {
+  if (galleries.length && lightbox) {
     var lbImg = lightbox.querySelector('img');
     var lbClose = lightbox.querySelector('.lb-close');
     var lastFocus = null;
@@ -65,12 +65,14 @@
       if (lastFocus) lastFocus.focus();
     }
 
-    gallery.addEventListener('click', function (ev) {
-      var a = ev.target.closest('a');
-      if (!a) return;
-      ev.preventDefault();
-      var img = a.querySelector('img');
-      openLb(a.getAttribute('href'), img ? img.alt : '', a);
+    Array.prototype.forEach.call(galleries, function (grid) {
+      grid.addEventListener('click', function (ev) {
+        var a = ev.target.closest('a');
+        if (!a) return;
+        ev.preventDefault();
+        var img = a.querySelector('img');
+        openLb(a.getAttribute('href'), img ? img.alt : '', a);
+      });
     });
     lbClose.addEventListener('click', closeLb);
     lightbox.addEventListener('click', function (ev) { if (ev.target === lightbox) closeLb(); });
