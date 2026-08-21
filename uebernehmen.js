@@ -75,12 +75,21 @@ const cache = fs.existsSync(CACHE) ? JSON.parse(fs.readFileSync(CACHE, "utf8")) 
 const saveCache = () => fs.writeFileSync(CACHE, JSON.stringify(cache, null, 1));
 
 // Dateiname aus dem Namen in der Mediathek: \u201eburger-rotate.mp4" bleibt
-// burger-rotate, \u201eClip 007" wird clip-007. Beide sind eindeutig.
+// burger-rotate, \u201eClip 007" wird clip-007. Kollidieren zwei Namen, bekommt
+// der zweite ein K\u00fcrzel angeh\u00e4ngt \u2014 sonst \u00fcberschriebe er die Datei des ersten.
+const stemOwner = {};                                  // stem \u2192 media-id
+for (const [cid, crel] of Object.entries(cache)) {
+  const s = String(crel).split("/").pop().replace(/\.[^.]+$/, "");
+  if (!stemOwner[s]) stemOwner[s] = cid;
+}
 function stemFor(id, item) {
-  const base = String(item.name || id).replace(/\.[^.]+$/, "")
+  let base = String(item.name || id).replace(/\.[^.]+$/, "")
     .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
-  return base || ("medium-" + id.slice(-6));
+    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40)
+    || ("medium-" + id.slice(-6));
+  if (stemOwner[base] && stemOwner[base] !== id) base += "-" + id.slice(-6);
+  stemOwner[base] = id;
+  return base;
 }
 
 async function ensureFile(id, item) {
@@ -96,16 +105,24 @@ async function ensureFile(id, item) {
   }
 
   const tmp = path.join(SITE, ".tmp-download");
-  const buf = Buffer.from(await (await fetch(item.url)).arrayBuffer());
-  fs.writeFileSync(tmp, buf);
+  const res = await fetch(item.url);
+  if (!res.ok) throw new Error(`Download fehlgeschlagen (${res.status}) für ${item.name || id}`);
+  fs.writeFileSync(tmp, Buffer.from(await res.arrayBuffer()));
 
   if (isVideo) {
     // auf Web-Format bringen: 540 px breit, ohne Ton, schnell startend
     execFileSync(FFMPEG, ["-nostdin", "-v", "error", "-i", tmp,
       "-vf", "scale=540:-2", "-an", "-c:v", "libx264", "-crf", "28", "-preset", "veryfast",
       "-movflags", "+faststart", out, "-y"]);
-    execFileSync(FFMPEG, ["-nostdin", "-v", "error", "-ss", "0.5", "-i", out,
-      "-frames:v", "1", "-q:v", "6", poster, "-y"]);
+    // Standbild: bei sehr kurzen Clips schlägt der Sprung zu 0,5 s fehl → Bild 1 nehmen
+    try {
+      execFileSync(FFMPEG, ["-nostdin", "-v", "error", "-ss", "0.5", "-i", out,
+        "-frames:v", "1", "-q:v", "6", poster, "-y"]);
+      if (!fs.existsSync(poster) || fs.statSync(poster).size === 0) throw new Error("leer");
+    } catch {
+      execFileSync(FFMPEG, ["-nostdin", "-v", "error", "-i", out,
+        "-frames:v", "1", "-q:v", "6", poster, "-y"]);
+    }
   } else {
     execFileSync(FFMPEG, ["-nostdin", "-v", "error", "-i", tmp,
       "-vf", "scale='min(1600,iw)':-2", "-q:v", "4", out, "-y"]);
@@ -139,10 +156,15 @@ function buildTag(tag, attrs) {
 }
 
 function replaceSingle(html, key, index, file, dir) {
-  const re = new RegExp(`<(img|video)\\b[^>]*data-slot="${key.replace(/\./g, "\\.")}" data-i="${index}"[^>]*>`, "g");
+  // frisst ein eventuell vorhandenes </video> gleich mit, damit beim Tausch
+  // Video → Bild kein verwaister Schließtag in der Seite zurückbleibt
+  const re = new RegExp(`<(img|video)\\b[^>]*data-slot="${key.replace(/\./g, "\\.")}" data-i="${index}"[^>]*>(?:\\s*</video>)?`, "g");
   return html.replace(re, (m) => {
-    const tagName = m.slice(1, m.indexOf(" "));
-    const a = attrsOf(m);
+    // nur den öffnenden Tag parsen — der mitgefressene Schließtag würde sonst
+    // als Müll-Attribut „video" wieder in die Seite geschrieben
+    const open = m.slice(0, m.indexOf(">") + 1);
+    const tagName = open.slice(1, open.indexOf(" "));
+    const a = attrsOf(open);
     a.delete("src"); a.delete("poster"); a.delete("width"); a.delete("height");
     a.delete("muted"); a.delete("loop"); a.delete("playsinline"); a.delete("preload"); a.delete("autoplay");
 
@@ -161,7 +183,9 @@ function replaceSingle(html, key, index, file, dir) {
       // ein Bild wird zum Clip: alt-Text wandert in aria-label
       if (tagName === "img" && a.get("alt") && !a.get("aria-label")) { neu.set("aria-label", a.get("alt")); a.delete("alt"); }
       for (const [k, v] of a) if (k !== "alt" && k !== "loading" && k !== "fetchpriority") neu.set(k, v);
-      return buildTag("video", neu);
+      // <video> ist kein selbstschließendes Element — ohne Schließtag würde
+      // alles, was danach kommt, als unsichtbarer Ersatzinhalt verschluckt
+      return buildTag("video", neu) + "</video>";
     }
 
     // war der Platz vorher ein Clip, muss die Video-Klasse wieder weg
@@ -225,7 +249,9 @@ async function run() {
     prepared[key] = [];
     for (const id of ids) {
       const item = media[id];
-      if (!item) { log("  FEHLT in der Mediathek:", id, "(Platz " + key + ")"); continue; }
+      // Platzhalter statt Auslassen: sonst rutschen alle folgenden Dateien um
+      // eine Position nach vorn und landen auf den falschen Plätzen
+      if (!item) { log("  FEHLT in der Mediathek:", id, "(Platz " + key + ") — Platz bleibt unverändert"); prepared[key].push(null); continue; }
       prepared[key].push(await ensureFile(id, item));
     }
   }
@@ -246,8 +272,8 @@ async function run() {
 
       for (const [key, files] of Object.entries(prepared)) {
         if (!key.startsWith(prefix + ".")) continue;
-        if (html.includes(`data-slot-list="${key}"`)) html = replaceList(html, key, files, dir);
-        else files.forEach((f, i) => { html = replaceSingle(html, key, i, f, dir); });
+        if (html.includes(`data-slot-list="${key}"`)) html = replaceList(html, key, files.filter(Boolean), dir);
+        else files.forEach((f, i) => { if (f) html = replaceSingle(html, key, i, f, dir); });
       }
       if (html !== before) { fs.writeFileSync(p, html); geaendert++; }
     }
@@ -255,11 +281,15 @@ async function run() {
 
   log(geaendert ? `${geaendert} Seiten aktualisiert.` : "Nichts zu ändern — Website ist auf dem Stand der Freigabe.");
 
-  if (PUSH && geaendert) {
-    execSync("git add -A", { cwd: SITE });
-    execSync('git commit -q -m "Medien aus der Mediathek übernommen"', { cwd: SITE });
+  if (PUSH) {
+    // nur die Seiten und Medien anfassen, nie zufällig andere Baustellen im Ordner
+    execSync("git add -- *.html de th assets", { cwd: SITE });
+    const offen = execSync("git status --porcelain -- *.html de th assets", { cwd: SITE }).toString().trim();
+    if (offen) execSync('git commit -q -m "Medien aus der Mediathek übernommen"', { cwd: SITE });
+    // Push läuft immer — so wird auch ein liegengebliebener Commit
+    // von einem früheren, abgebrochenen Lauf noch live gestellt
     execSync("git push -q origin HEAD", { cwd: SITE });
-    log("Live gestellt — GitHub Pages braucht ~10 Minuten.");
+    if (offen || geaendert) log("Live gestellt — GitHub Pages braucht ~10 Minuten.");
   }
   return layout.publishedAt || layout.changedAt || "";
 }
@@ -272,6 +302,7 @@ async function run() {
     try {
       const tok = await token();
       const r = await fetch(`${FS_BASE}/layout/${DOC}`, { headers: { Authorization: "Bearer " + tok } });
+      if (!r.ok) throw new Error("Freigabe-Abfrage: HTTP " + r.status);
       const j = await r.json();
       const stamp = j.fields && (j.fields.publishedAt || j.fields.changedAt);
       const val = stamp ? stamp.timestampValue : "";
