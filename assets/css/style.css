@@ -172,14 +172,52 @@ h3 { font-size: 1.15rem; }
 }
 .nav-links a:hover { color: var(--teal-hi); background: rgba(47,169,158,0.08); }
 .nav-links a[aria-current="page"] { color: var(--teal-hi); }
-.nav-links .btn { min-height: 42px; padding: 9px 22px; margin-left: 8px; }
+/* Reihenfolge im Kopf: Bestellknopf · Menu · Find Us · About · Gallery · Sprache.
+   Sie steht so im HTML — die frueheren order:-Regeln sind deshalb weg.
+   Bestellknopf, Menu und Find Us sind bewusst groesser/heller als der Rest. */
+.nav-links .nav-cta { margin-right: 14px; }
+.nav-links .btn {
+  /* ohne diese Zeile gewinnt .nav-links a und der Knopf bekaeme creme Schrift
+     auf Teal — schlecht lesbar; alle anderen Knoepfe der Seite sind dunkel */
+  color: #07110f;
+  min-height: 46px;
+  padding: 11px 26px;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  box-shadow: 0 0 0 1px rgba(47,169,158,0.35), 0 8px 22px -10px rgba(47,169,158,0.85);
+}
+.nav-links .btn:hover { color: #07110f; box-shadow: 0 0 0 1px rgba(94,214,203,0.5), 0 12px 26px -10px rgba(94,214,203,0.95); }
+
+/* die beiden wichtigen Textlinks: groesser, hell, mit Teal-Strich darunter */
+.nav-links .nav-key > a {
+  position: relative;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink);
+  padding: 12px 16px;
+}
+.nav-links .nav-key > a::after {
+  content: "";
+  position: absolute;
+  left: 16px; right: 16px; bottom: 6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--teal);
+  opacity: 0.45;
+  transition: opacity 160ms ease-out;
+}
+.nav-links .nav-key > a:hover::after,
+.nav-links .nav-key > a[aria-current="page"]::after { opacity: 1; }
+
+/* Nebenpunkte treten zurueck */
+.nav-links .nav-minor > a { font-size: 0.78rem; font-weight: 600; color: var(--ink-dim); }
+.nav-links .nav-minor > a:hover { color: var(--teal-hi); }
 
 /* Der Bestellknopf trägt zwei Beschriftungen: die lange für den Bildschirm,
    die kurze fürs Handy — sonst sprengt "Jetzt bestellen" die Navigationszeile */
 .btn-kurz { display: none; }
 
-.lang-switch { display: flex; align-items: center; order: 5; }
-.nav-links > li:last-child { order: 6; }   /* Bestellknopf bleibt ganz rechts */
+.lang-switch { display: flex; align-items: center; margin-left: 6px; }
 .lang-switch a {
   padding: 12px 7px;
   font-size: 0.76rem;
@@ -192,7 +230,7 @@ h3 { font-size: 1.15rem; }
 
 /* ---------- Kopfzeile am Handy: zwei Zeilen statt Klappmenü ----------
    Zeile 1: Logo links, Sprachauswahl rechts (dort, wo vorher der Menüknopf saß)
-   Zeile 2: Menu · Gallery · About · Visit Us nebeneinander, Bestellknopf rechts */
+   Zeile 2: Bestellknopf links, danach Menu · Find Us · About · Gallery */
 @media (max-width: 860px) {
   :root { --nav-h: 118px; }
 
@@ -235,9 +273,16 @@ h3 { font-size: 1.15rem; }
   .nav-links .lang-switch { position: absolute; top: 10px; right: 20px; }   /* 20px = Seitenrand der .wrap */
   .lang-switch a { padding: 10px 6px; font-size: 0.8rem; }
 
-  /* Knopf zuverlässig rechts: mit margin-left:auto würde er in einer
-     umbruchfähigen Zeile in die nächste Reihe rutschen */
+  /* space-between statt margin: in einer umbruchfähigen Zeile würde
+     margin:auto den Nachbarn in die nächste Reihe schieben */
   .nav-links { justify-content: space-between; }
+  .nav-links .nav-cta { margin-right: 0; }
+  .nav-links .nav-key > a {
+    font-size: clamp(0.64rem, 3vw, 0.86rem);
+    padding: 14px 5px;
+  }
+  .nav-links .nav-key > a::after { left: 5px; right: 5px; bottom: 7px; height: 2px; }
+  .nav-links .nav-minor > a { font-size: clamp(0.56rem, 2.5vw, 0.72rem); }
   .nav-links .btn-lang { display: none; }
   .nav-links .btn-kurz { display: inline; }
   .nav-links .btn {
@@ -253,6 +298,7 @@ h3 { font-size: 1.15rem; }
    deshalb hier noch etwas enger setzen, damit der Bestellknopf nicht rausläuft */
 @media (max-width: 359px) {
   .nav-links > li:not(.lang-switch) > a { padding: 14px 2px; letter-spacing: 0.02em; }
+  .nav-links .nav-key > a::after { left: 2px; right: 2px; }
   .nav-links .btn { padding: 9px 9px; }
 }
 
