@@ -23,7 +23,11 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  /* Anker (#order) sonst unter der fixierten Kopfzeile */
+  scroll-padding-top: calc(var(--nav-h) + 14px);
+}
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -170,7 +174,12 @@ h3 { font-size: 1.15rem; }
 .nav-links a[aria-current="page"] { color: var(--teal-hi); }
 .nav-links .btn { min-height: 42px; padding: 9px 22px; margin-left: 8px; }
 
-.lang-switch { display: flex; align-items: center; }
+/* Der Bestellknopf trägt zwei Beschriftungen: die lange für den Bildschirm,
+   die kurze fürs Handy — sonst sprengt "Jetzt bestellen" die Navigationszeile */
+.btn-kurz { display: none; }
+
+.lang-switch { display: flex; align-items: center; order: 5; }
+.nav-links > li:last-child { order: 6; }   /* Bestellknopf bleibt ganz rechts */
 .lang-switch a {
   padding: 12px 7px;
   font-size: 0.76rem;
@@ -181,34 +190,70 @@ h3 { font-size: 1.15rem; }
 .lang-switch a:hover { color: var(--ink); }
 .lang-switch a[aria-current] { color: var(--teal-hi); }
 
-.nav-toggle {
-  display: none;
-  width: 48px; height: 48px;
-  background: none;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  cursor: pointer;
-  align-items: center;
-  justify-content: center;
-}
-.nav-toggle svg { width: 26px; height: 26px; stroke: var(--ink); }
-
+/* ---------- Kopfzeile am Handy: zwei Zeilen statt Klappmenü ----------
+   Zeile 1: Logo links, Sprachauswahl rechts (dort, wo vorher der Menüknopf saß)
+   Zeile 2: Menu · Gallery · About · Visit Us nebeneinander, Bestellknopf rechts */
 @media (max-width: 860px) {
-  .nav-toggle { display: inline-flex; }
-  .nav-links {
-    position: fixed;
-    top: var(--nav-h); left: 0; right: 0;
-    flex-direction: column;
-    align-items: stretch;
+  :root { --nav-h: 118px; }
+
+  /* feste Höhe würde die zweite Zeile abschneiden, sobald jemand die
+     Schrift größer stellt — deshalb Mindesthöhe statt Höhe */
+  .site-head { align-items: stretch; height: auto; min-height: var(--nav-h); }
+  .site-head .wrap {
+    position: relative;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: flex-start;
     gap: 0;
-    background: rgba(13,16,17,0.97);
-    border-bottom: 1px solid var(--line);
-    padding: 10px 20px 22px;
-    display: none;
+    padding-top: 12px;
   }
-  .nav-links.open { display: flex; }
-  .nav-links a { padding: 15px 10px; font-size: 0.95rem; }
-  .nav-links .btn { margin: 12px 0 0; justify-content: center; }
+  .brand-logo { height: 38px; }
+  .brand .brand-sub { font-size: 0.5rem; }
+
+  .site-head nav { width: 100%; margin-top: 10px; }
+  .nav-links {
+    position: static;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    /* die Grundregel setzt gap: 6px — vier Lücken sprengen am Handy die Zeile */
+    row-gap: 2px;
+    column-gap: 0;
+    align-items: center;
+    padding: 0;
+    background: none;
+    border: none;
+  }
+  .nav-links a {
+    padding: 14px 4px;
+    font-size: clamp(0.6rem, 2.8vw, 0.78rem);
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+
+  /* Sprachauswahl aus der Liste heraus nach oben rechts holen */
+  .nav-links .lang-switch { position: absolute; top: 10px; right: 20px; }   /* 20px = Seitenrand der .wrap */
+  .lang-switch a { padding: 10px 6px; font-size: 0.8rem; }
+
+  /* Knopf zuverlässig rechts: mit margin-left:auto würde er in einer
+     umbruchfähigen Zeile in die nächste Reihe rutschen */
+  .nav-links { justify-content: space-between; }
+  .nav-links .btn-lang { display: none; }
+  .nav-links .btn-kurz { display: inline; }
+  .nav-links .btn {
+    margin: 0;
+    min-height: 40px;
+    padding: 9px 11px;
+    font-size: clamp(0.6rem, 2.6vw, 0.72rem);
+    white-space: nowrap;
+  }
+}
+
+/* Sehr schmale Handys (unter 360 px): die deutsche Fassung ist am längsten,
+   deshalb hier noch etwas enger setzen, damit der Bestellknopf nicht rausläuft */
+@media (max-width: 359px) {
+  .nav-links > li:not(.lang-switch) > a { padding: 14px 2px; letter-spacing: 0.02em; }
+  .nav-links .btn { padding: 9px 9px; }
 }
 
 /* ---------- hero ---------- */
@@ -308,17 +353,29 @@ section.tight { padding: 56px 0; }
   border-bottom: 1px dashed var(--line);
 }
 .menu-item h3 { font-size: 1.02rem; text-transform: uppercase; letter-spacing: 0.05em; }
-.menu-item.with-thumb { grid-template-columns: 68px 1fr auto; }
+/* Die Gerichtsbilder waren mit 68 px kaum zu erkennen — jetzt deutlich
+   größer und anklickbar (JavaScript öffnet sie groß, siehe main.js) */
+.menu-item.with-thumb { grid-template-columns: 116px 1fr auto; }
 .menu-item.with-thumb .thumb {
   grid-column: 1;
   grid-row: 1 / span 2;
   align-self: center;
-  width: 68px;
-  height: 68px;
+  width: 116px;
+  height: 116px;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 12px;
   border: 1px solid var(--line);
+  cursor: zoom-in;
+  transition: transform 200ms ease-out, border-color 200ms ease-out;
 }
+.menu-item.with-thumb .thumb:hover,
+.menu-item.with-thumb .thumb:focus-visible {
+  transform: scale(1.04);
+  border-color: var(--teal);
+}
+/* Am Handy reicht die Breite nicht für Bild + Text + Preis nebeneinander
+   (der Preis wurde abgeschnitten). Deshalb: Bild links, rechts daneben
+   Gericht, Preis und Beschreibung untereinander. */
 .menu-item.with-thumb h3 { grid-column: 2; }
 .menu-item.with-thumb .desc { grid-column: 2; }
 .menu-item.with-thumb .price { grid-column: 3; }
@@ -330,6 +387,24 @@ section.tight { padding: 56px 0; }
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .menu-item.with-thumb {
+    grid-template-columns: 92px 1fr;
+    column-gap: 14px;
+    row-gap: 2px;
+  }
+  .menu-item.with-thumb .thumb {
+    width: 92px; height: 92px;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: start;
+  }
+  .menu-item.with-thumb { grid-template-columns: 92px 1fr auto; }
+  .menu-item.with-thumb h3 { grid-column: 2; grid-row: 1; font-size: 1rem; }
+  .menu-item.with-thumb .price { grid-column: 3; grid-row: 1; align-self: start; font-size: 0.9rem; }
+  .menu-item.with-thumb .desc { grid-column: 2 / span 2; grid-row: 2; }
 }
 
 /* ---------- gallery ---------- */
