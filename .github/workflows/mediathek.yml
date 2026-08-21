@@ -1,0 +1,43 @@
+name: Mediathek übernehmen
+
+# Holt die aktuelle Kachel-Belegung aus der Mediathek und stellt sie live.
+# Läuft alle 5 Minuten von selbst — niemand muss dafür einen Rechner anhaben.
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:        # Knopf "Run workflow" auf GitHub, für sofort
+
+concurrency:
+  group: mediathek          # nie zwei Läufe gleichzeitig
+  cancel-in-progress: false
+
+permissions:
+  contents: write           # darf die Seiten zurückschreiben
+
+jobs:
+  uebernehmen:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: ffmpeg bereitstellen
+        run: ffmpeg -version >/dev/null 2>&1 || (sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg)
+
+      - name: Als Automatik anmelden
+        run: |
+          git config user.name  "Homies Mediathek"
+          git config user.email "mediathek@homiessamui.com"
+
+      - name: Kacheln einbauen und live stellen
+        env:
+          FB_PROJECT: homies-samui-media
+          FB_APIKEY: ${{ secrets.FB_APIKEY }}
+          FB_EMAIL:  ${{ secrets.FB_EMAIL }}
+          FB_CODE:   ${{ secrets.FB_CODE }}
+        run: node uebernehmen.js --entwurf --push

@@ -14,15 +14,30 @@ const { execFileSync, execSync } = require("child_process");
 const SITE = __dirname;
 const IMG = path.join(SITE, "assets/img");
 const VID = path.join(SITE, "assets/video");
-const CACHE = path.join(SITE, ".medien-cache.json");
-const FFMPEG = "C:/Users/andrk/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0-full_build/bin/ffmpeg.exe";
+const CACHE = path.join(SITE, "medien-cache.json");
+
+// ffmpeg: auf Andrés Rechner der WinGet-Pfad, bei GitHub das vorinstallierte
+const WIN_FFMPEG = "C:/Users/andrk/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0-full_build/bin/ffmpeg.exe";
+const FFMPEG = process.env.FFMPEG_PATH || (fs.existsSync(WIN_FFMPEG) ? WIN_FFMPEG : "ffmpeg");
 
 const args = process.argv.slice(2);
 const WATCH = args.includes("--watch");
 const PUSH = args.includes("--push");
 const DOC = args.includes("--entwurf") ? "draft" : "published";
 
-const zugang = JSON.parse(fs.readFileSync(path.join(SITE, "zugang.json"), "utf8"));
+// Zugangsdaten aus der Datei — bei GitHub aus den hinterlegten Geheimnissen
+const zugang = fs.existsSync(path.join(SITE, "zugang.json"))
+  ? JSON.parse(fs.readFileSync(path.join(SITE, "zugang.json"), "utf8"))
+  : {
+      projectId: process.env.FB_PROJECT || "homies-samui-media",
+      apiKey: process.env.FB_APIKEY,
+      email: process.env.FB_EMAIL,
+      code: process.env.FB_CODE
+    };
+if (!zugang.apiKey || !zugang.email || !zugang.code) {
+  console.error("Keine Zugangsdaten: zugang.json fehlt und FB_APIKEY/FB_EMAIL/FB_CODE sind nicht gesetzt.");
+  process.exit(1);
+}
 const KEY = zugang.apiKey;
 const FS_BASE = `https://firestore.googleapis.com/v1/projects/${zugang.projectId}/databases/(default)/documents`;
 
@@ -72,7 +87,10 @@ async function fetchAll(tok) {
 /* ── Dateien holen und web-tauglich machen ───────────────── */
 
 const cache = fs.existsSync(CACHE) ? JSON.parse(fs.readFileSync(CACHE, "utf8")) : {};
-const saveCache = () => fs.writeFileSync(CACHE, JSON.stringify(cache, null, 1));
+// sortiert speichern, damit die Datei bei gleichem Inhalt Byte für Byte gleich
+// bleibt — sonst gäbe es bei jedem Automatiklauf einen sinnlosen Commit
+const saveCache = () => fs.writeFileSync(CACHE,
+  JSON.stringify(Object.fromEntries(Object.keys(cache).sort().map(k => [k, cache[k]])), null, 1) + "\n");
 
 // Dateiname aus dem Namen in der Mediathek: \u201eburger-rotate.mp4" bleibt
 // burger-rotate, \u201eClip 007" wird clip-007. Kollidieren zwei Namen, bekommt
@@ -236,6 +254,32 @@ function replaceList(html, key, files, dir) {
   return html.slice(0, start) + m[0] + "\n" + inner + "\n      " + html.slice(i);
 }
 
+/* ── Rückmeldung an die Mediathek ────────────────────────── */
+
+// Fingerabdruck der Belegung — die App vergleicht ihn mit dem eigenen Stand
+// und zeigt an, ob die Website schon nachgezogen hat.
+function fingerabdruck(slots) {
+  return Object.keys(slots).sort().map(k => k + ":" + (slots[k] || []).join(",")).join("|");
+}
+
+async function melden(tok, slots, geaendert) {
+  try {
+    await fetch(`${FS_BASE}/layout/applied`, {
+      method: "PATCH",
+      headers: { Authorization: "Bearer " + tok, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: {
+          fingerprint: { stringValue: fingerabdruck(slots) },
+          at: { timestampValue: new Date().toISOString() },
+          by: { stringValue: process.env.GITHUB_ACTIONS ? "Automatik" : "PC" },
+          quelle: { stringValue: DOC },
+          seiten: { integerValue: String(geaendert) }
+        }
+      })
+    });
+  } catch (e) { log("Rückmeldung an die Mediathek fehlgeschlagen:", e.message); }
+}
+
 /* ── Hauptlauf ───────────────────────────────────────────── */
 
 async function run() {
@@ -282,15 +326,27 @@ async function run() {
   log(geaendert ? `${geaendert} Seiten aktualisiert.` : "Nichts zu ändern — Website ist auf dem Stand der Freigabe.");
 
   if (PUSH) {
-    // nur die Seiten und Medien anfassen, nie zufällig andere Baustellen im Ordner
-    execSync("git add -- *.html de th assets", { cwd: SITE });
-    const offen = execSync("git status --porcelain -- *.html de th assets", { cwd: SITE }).toString().trim();
+    // nur die Seiten, Medien und den Aufbereitungs-Merkzettel anfassen,
+    // nie zufällig andere Baustellen im Ordner
+    const pfade = '-- "*.html" de th assets medien-cache.json';
+    execSync(`git add ${pfade}`, { cwd: SITE });
+    const offen = execSync(`git status --porcelain ${pfade}`, { cwd: SITE }).toString().trim();
     if (offen) execSync('git commit -q -m "Medien aus der Mediathek übernommen"', { cwd: SITE });
     // Push läuft immer — so wird auch ein liegengebliebener Commit
-    // von einem früheren, abgebrochenen Lauf noch live gestellt
-    execSync("git push -q origin HEAD", { cwd: SITE });
+    // von einem früheren, abgebrochenen Lauf noch live gestellt.
+    // Bei Gegenverkehr (jemand anderes hat gepusht) einmal nachziehen.
+    try {
+      execSync("git push -q origin HEAD", { cwd: SITE });
+    } catch {
+      log("Push abgewiesen — hole den Gegenstand und versuche es erneut.");
+      execSync("git pull --rebase -q origin HEAD", { cwd: SITE });
+      execSync("git push -q origin HEAD", { cwd: SITE });
+    }
     if (offen || geaendert) log("Live gestellt — GitHub Pages braucht ~10 Minuten.");
   }
+
+  // in der Mediathek vermerken, was auf der Website steht — die App zeigt es an
+  await melden(tok, slots, geaendert);
   return layout.publishedAt || layout.changedAt || "";
 }
 
