@@ -231,6 +231,59 @@ function replaceSingle(html, key, index, file, dir) {
   });
 }
 
+// Menüzeilen ohne festes Bild (Combos, Saucen, Getränke): die Zeile trägt nur
+// einen unsichtbaren Marker data-slot-item. Liegt in der Mediathek ein Medium
+// auf dem Platz, wird ein Bild in die Zeile EINGEFÜGT; wird der Platz wieder
+// geleert, verschwindet das Bild — die Zeile sieht dann aus wie vorher.
+function replaceItemThumb(html, key, files, dir) {
+  const esc = key.replace(/\./g, "\\.");
+  const openRe = new RegExp(`<div\\b[^>]*data-slot-item="${esc}"[^>]*>`);
+  const m = html.match(openRe);
+  if (!m) return html;
+  // Datei fehlt in der Mediathek (Platzhalter null) → Zeile nicht anfassen
+  if (files.length && files[0] === null) return html;
+  const file = files[0] || null;
+
+  const start = html.indexOf(m[0]);
+  // .menu-item enthält keine weiteren <div> — das erste </div> schließt die Zeile
+  const end = html.indexOf("</div>", start);
+  let open = m[0];
+  let seg = html.slice(start + open.length, end);
+
+  // vorhandenes Medium vom letzten Lauf rausnehmen — Beschreibung dabei retten
+  const medRe = new RegExp(`\\s*<(?:img|video)\\b[^>]*data-slot="${esc}"[^>]*>(?:\\s*</video>)?`);
+  const med = seg.match(medRe);
+  let oldAlt = "", oldFileName = "";
+  if (med) {
+    const a = attrsOf(med[0].trim().slice(0, med[0].trim().indexOf(">") + 1));
+    oldAlt = a.get("alt") || a.get("aria-label") || "";
+    oldFileName = (a.get("src") || "").split("/").pop();
+    seg = seg.replace(medRe, "");
+  }
+
+  const thumbKlasse = (an) => {
+    open = open.replace(/class="([^"]*)"/, (_, cls) => {
+      const list = cls.split(/\s+/).filter(c => c && c !== "with-thumb");
+      if (an) list.splice(1, 0, "with-thumb");
+      return `class="${list.join(" ")}"`;
+    });
+  };
+
+  if (!file) {
+    thumbKlasse(false);
+    return html.slice(0, start) + open + seg + html.slice(end);
+  }
+
+  const gleicheDatei = oldFileName === nameOf(file.rel);
+  const beschreibung = file.alt || (gleicheDatei ? oldAlt : "");
+  const size = file.w ? ` width="${file.w}" height="${file.h}"` : "";
+  const tag = file.isVideo
+    ? `<video data-slot="${key}" data-i="0" class="thumb lazy-vid" muted loop playsinline preload="none" poster="${up(file.posterRel, dir)}" src="${up(file.rel, dir)}"${size}${beschreibung ? ` aria-label="${beschreibung}"` : ""}></video>`
+    : `<img data-slot="${key}" data-i="0" class="thumb" src="${up(file.rel, dir)}"${size} alt="${beschreibung}" loading="lazy">`;
+  thumbKlasse(true);
+  return html.slice(0, start) + open + "\n            " + tag + seg + html.slice(end);
+}
+
 function replaceList(html, key, files, dir) {
   const openRe = new RegExp(`<div class="gal-grid"([^>]*)data-slot-list="${key.replace(/\./g, "\\.")}"([^>]*)>`);
   const m = html.match(openRe);
@@ -327,6 +380,7 @@ async function run() {
       for (const [key, files] of Object.entries(prepared)) {
         if (!key.startsWith(prefix + ".")) continue;
         if (html.includes(`data-slot-list="${key}"`)) html = replaceList(html, key, files.filter(Boolean), dir);
+        else if (html.includes(`data-slot-item="${key}"`)) html = replaceItemThumb(html, key, files, dir);
         else files.forEach((f, i) => { if (f) html = replaceSingle(html, key, i, f, dir); });
       }
       if (html !== before) { fs.writeFileSync(p, html); geaendert++; }
@@ -360,7 +414,9 @@ async function run() {
   return layout.publishedAt || layout.changedAt || "";
 }
 
-(async () => {
+// zum Testen einzelner Funktionen ohne echten Lauf (node -e "require('./uebernehmen.js')…")
+module.exports = { replaceSingle, replaceList, replaceItemThumb };
+if (require.main === module) (async () => {
   let last = await run();
   if (!WATCH) return;
   log("Lausche auf neue Freigaben … (Strg + C zum Beenden)");
